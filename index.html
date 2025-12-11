@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <title>Caesar-dekryptering med sannsynlighetsanalyse</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+        }
+        input {
+            width: 300px;
+            padding: 6px;
+            font-size: 16px;
+        }
+        button {
+            padding: 8px 12px;
+            font-size: 15px;
+        }
+        #output {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Caesar-dekryptering med norsk ordbok og sannsynlighetsgraf</h2>
+
+<label for="cipher">Kryptert tekst:</label><br>
+<input id="cipher" type="text" placeholder="f.eks. TUJWFJS">
+<button onclick="analyze()">Analyser</button>
+
+<canvas id="chart" width="600" height="300"></canvas>
+
+<div id="output"></div>
+
+<script>
+// ---------------------------
+// Liten norsk ordliste med vekter (frekvens-lignende tall)
+// Du kan senere bytte dette ut med fetch("ordliste.json")
+// ---------------------------
+const wordFrequency = {
+    "og": 100, "i": 95, "det": 90, "er": 88, "en": 85,
+    "operaen": 60, "forsvaret": 55, "norge": 52, "kode": 40,
+    "leder": 38, "system": 36, "analyse": 33
+};
+
+// ---------------------------
+// Caesar-dekryptering
+// ---------------------------
+function caesarDecrypt(text, shift) {
+    return text.split("").map(c => {
+        if (c < 'A' || c > 'Z') return c;
+        let code = c.charCodeAt(0) - 65;
+        return String.fromCharCode(((code - shift + 26) % 26) + 65);
+    }).join("");
+}
+
+// ---------------------------
+// Sannsynlighetsvurdering
+// ---------------------------
+function estimateProbability(word) {
+    const w = word.toLowerCase();
+    return wordFrequency[w] ? wordFrequency[w] : 1; // 1 = veldig lav sannsynlighet
+}
+
+// ---------------------------
+// Analysefunksjon
+// ---------------------------
+function analyze() {
+    const cipher = document.getElementById("cipher").value.toUpperCase().trim();
+    if (!cipher) return;
+
+    const shifts = [];
+    const labels = [];
+    const probabilities = [];
+
+    for (let s = 1; s <= 25; s++) {
+        const plain = caesarDecrypt(cipher, s);
+        const prob = estimateProbability(plain);
+
+        shifts.push({shift: s, text: plain, probability: prob});
+        labels.push("Shift " + s);
+        probabilities.push(prob);
+    }
+
+    // Finn maksimal sannsynlighet
+    const best = shifts.reduce((a, b) => a.probability > b.probability ? a : b);
+
+    // Skriv resultater
+    document.getElementById("output").innerHTML =
+        `<h3>Mest sannsynlige dekryptering:</h3>
+        <p><b>${best.text}</b> (skift ${best.shift}, score ${best.probability})</p>
+        <h3>Alle dekrypteringer:</h3>
+        <pre>${shifts.map(s => `${s.shift}: ${s.text}  [score: ${s.probability}]`).join("\n")}</pre>`;
+
+    // Tegn grafen
+    drawChart(labels, probabilities);
+}
+
+// ---------------------------
+// Chart.js graf
+// ---------------------------
+let chartInstance = null;
+
+function drawChart(labels, data) {
+    const ctx = document.getElementById("chart").getContext("2d");
+
+    if (chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Sannsynlighetsscore",
+                data: data
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: "Score (prosentliknende vekter)" }
+                }
+            }
+        }
+    });
+}
+</script>
+
+</body>
+</html>
