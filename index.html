@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Caesar-dekryptering med substring-match</title>
+    <title>Caesar-dekryptering med norsk alfabet</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: Arial; max-width: 900px; margin: auto; padding: 20px; }
@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<h2>Caesar-dekryptering med substring-match</h2>
+<h2>Caesar-dekryptering med norsk alfabet</h2>
 
 <label for="cipher">Kryptert tekst:</label><br>
 <input id="cipher" type="text" placeholder="f.eks. OFLJWKQDLJW">
@@ -23,6 +23,10 @@
 <div id="output"></div>
 
 <script>
+// Norsk alfabet med Æ Ø Å
+const norwegianAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ";
+const alphabetLength = norwegianAlphabet.length;
+
 let norwegianWordsSet = new Set();
 
 // ---------------------------
@@ -36,18 +40,20 @@ fetch('ordliste.txt')
   });
 
 // ---------------------------
-// Caesar-dekryptering
+// Caesar-dekryptering med norsk alfabet
 // ---------------------------
 function caesarDecrypt(text, shift) {
     return text.split("").map(c => {
-        if (c < 'A' || c > 'Z') return c;
-        let code = c.charCodeAt(0) - 65;
-        return String.fromCharCode(((code - shift + 26) % 26) + 65);
+        const upperC = c.toUpperCase();
+        const index = norwegianAlphabet.indexOf(upperC);
+        if (index === -1) return c; // behold andre tegn
+        const newIndex = (index - shift + alphabetLength) % alphabetLength;
+        return norwegianAlphabet[newIndex];
     }).join("");
 }
 
 // ---------------------------
-// Finn beste substring-match med hele ord = 100%
+// Finn beste substring-match
 // ---------------------------
 function bestSubstringMatch(word) {
     const w = word.toLowerCase();
@@ -56,13 +62,12 @@ function bestSubstringMatch(word) {
     norwegianWordsSet.forEach(ow => {
         const o = ow.toLowerCase();
 
-        // Hele ord matcher → 100%
+        // Hele ord matcher → 100 %
         if (w === o) {
             maxScore = 100;
             return;
         }
 
-        // Ellers substring
         if (o.length > w.length) return;
 
         for (let i = 0; i <= w.length - o.length; i++) {
@@ -89,7 +94,7 @@ function analyze() {
     const labels = [];
     const probabilities = [];
 
-    for (let s = 1; s <= 25; s++) {
+    for (let s = 1; s <= alphabetLength - 1; s++) { // 1 til 28 for norsk alfabet
         const plain = caesarDecrypt(cipher, s);
         const score = bestSubstringMatch(plain);
 
