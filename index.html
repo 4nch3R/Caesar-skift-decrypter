@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
     <meta charset="UTF-8">
-    <title>Caesar-dekryptering med substrings</title>
+    <title>Caesar-dekryptering med substring-match</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: Arial; max-width: 900px; margin: auto; padding: 20px; }
@@ -47,7 +47,7 @@ function caesarDecrypt(text, shift) {
 }
 
 // ---------------------------
-// Finn beste substring-match
+// Finn beste substring-match med hele ord = 100%
 // ---------------------------
 function bestSubstringMatch(word) {
     const w = word.toLowerCase();
@@ -55,9 +55,16 @@ function bestSubstringMatch(word) {
 
     norwegianWordsSet.forEach(ow => {
         const o = ow.toLowerCase();
+
+        // Hele ord matcher → 100%
+        if (w === o) {
+            maxScore = 100;
+            return;
+        }
+
+        // Ellers substring
         if (o.length > w.length) return;
 
-        // Sjekk alle mulige startposisjoner i w
         for (let i = 0; i <= w.length - o.length; i++) {
             const sub = w.substring(i, i + o.length);
             if (sub === o) {
